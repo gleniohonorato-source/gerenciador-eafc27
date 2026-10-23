@@ -1,6 +1,7 @@
 import { app, dialog, ipcMain } from 'electron';
 import { basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { handleTrustedIpc } from './ipc-security';
 import { createDatabaseBackup, inspectDatabaseBackup, restoreDatabaseBackup, type CareerStore, openCareerStore } from '@gerenciador/database';
 
 export const BACKUP_CHANNELS = Object.freeze({ create: 'backup:create', selectRestore: 'backup:select-restore', confirmRestore: 'backup:confirm-restore' });
@@ -13,7 +14,7 @@ export function registerBackupIpc(input: {
   readonly setStore: (store: CareerStore) => void;
 }): void {
   ipcMain.removeHandler(BACKUP_CHANNELS.create);
-  ipcMain.handle(BACKUP_CHANNELS.create, async () => {
+  handleTrustedIpc(BACKUP_CHANNELS.create, async () => {
     const choice = await dialog.showSaveDialog({
       title: 'Salvar backup do Gerenciador',
       defaultPath: join(app.getPath('documents'), `gerenciador-backup-${new Date().toISOString().slice(0, 10)}.db`),
@@ -25,7 +26,7 @@ export function registerBackupIpc(input: {
   });
 
   ipcMain.removeHandler(BACKUP_CHANNELS.selectRestore);
-  ipcMain.handle(BACKUP_CHANNELS.selectRestore, async () => {
+  handleTrustedIpc(BACKUP_CHANNELS.selectRestore, async () => {
     const choice = await dialog.showOpenDialog({
       title: 'Selecionar backup do Gerenciador',
       properties: ['openFile'],
@@ -40,7 +41,7 @@ export function registerBackupIpc(input: {
   });
 
   ipcMain.removeHandler(BACKUP_CHANNELS.confirmRestore);
-  ipcMain.handle(BACKUP_CHANNELS.confirmRestore, async (_event, payload: unknown) => {
+  handleTrustedIpc(BACKUP_CHANNELS.confirmRestore, async (_event, payload: unknown) => {
     if (!isRecord(payload) || typeof payload['token'] !== 'string' || payload['confirmed'] !== true) {
       throw new TypeError('Restore requires an explicit confirmation token.');
     }

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, session } from 'electron';
 import { delimiter, join } from 'node:path';
+import { pathToFileURL, URL } from 'node:url';
 import { Module } from 'node:module';
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createDatabaseClient, openCareerStore, type CareerStore } from '@gerenciador/database';
@@ -8,6 +9,7 @@ import playerProvenanceMigrationSql from '../../../packages/database/prisma/migr
 import { registerCareerIpc } from './career-ipc';
 import { registerCalendarImportIpc } from './calendar-import-ipc';
 import { registerBackupIpc } from './backup-ipc';
+import { handleTrustedIpc, trustMainRenderer } from './ipc-security';
 
 const developmentOrigin = process.env['ELECTRON_RENDERER_URL'];
 let databasePath = '';
@@ -50,6 +52,21 @@ function configurePrismaRuntime(): void {
   (Module as unknown as { _initPaths: () => void })._initPaths();
   process.env['GERENCIADOR_PRISMA_CLIENT_PATH'] = clientEntry;
   process.env['PRISMA_QUERY_ENGINE_LIBRARY'] = enginePath;
+}
+
+function isTrustedRendererUrl(targetUrl: string): boolean {
+  try {
+    const target = new URL(targetUrl);
+    if (developmentOrigin) {
+      const expected = new URL(developmentOrigin);
+      return target.origin === expected.origin;
+    }
+    const rendererPath = join(import.meta.dirname, '../renderer/index.html');
+    const expectedUrl = pathToFileURL(rendererPath);
+    return target.protocol === 'file:' && target.href === expectedUrl.href;
+  } catch {
+    return false;
+  }
 }
 
 function applyContentSecurityPolicy(): void {
@@ -131,6 +148,15 @@ async function createMainWindow(): Promise<void> {
     },
   });
 
+  mainWindow.webContents.once('did-finish-load', () => {
+    trustMainRenderer(mainWindow.webContents.id, mainWindow.webContents.getURL());
+  });
+  mainWindow.webContents.on('will-navigate', (event, targetUrl) => {
+    if (!isTrustedRendererUrl(targetUrl)) event.preventDefault();
+  });
+  mainWindow.webContents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
+    if (isMainFrame && !isInPlace) trustMainRenderer(mainWindow.webContents.id, '');
+  });
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.webContents.on('preload-error', (_event, preloadPath, error) => {
     logStartup(`Preload failed to load (${preloadPath})`, error);
@@ -139,10 +165,6 @@ async function createMainWindow(): Promise<void> {
     logStartup(`Renderer failed to load (${errorCode}): ${errorDescription}; URL=${validatedURL}`);
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  mainWindow.webContents.on('will-navigate', (event, targetUrl) => {
-    const allowed = developmentOrigin ? targetUrl.startsWith(developmentOrigin) : targetUrl.startsWith('file://');
-    if (!allowed) event.preventDefault();
-  });
   if (developmentOrigin) await mainWindow.loadURL(developmentOrigin);
   else await mainWindow.loadFile(join(import.meta.dirname, '../renderer/index.html'));
 }
@@ -165,7 +187,7 @@ app.whenReady().then(async () => {
     registerCalendarImportIpc(store);
     const appVersion = app.getVersion();
     ipcMain.removeHandler('app:version');
-    ipcMain.handle('app:version', () => appVersion);
+    handleTrustedIpc('app:version', () => appVersion);
     registerBackupIpc({
       databasePath,
       getStore: () => {

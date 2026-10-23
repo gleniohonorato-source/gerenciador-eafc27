@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { randomUUID, randomBytes } from 'node:crypto';
+import { handleTrustedIpc } from './ipc-security';
 import { createCareerService, type CareerService } from '@gerenciador/application';
 import { updatePlayerProfile, type CareerStore, type PlayerProfileInput } from '@gerenciador/database';
 
@@ -35,7 +36,7 @@ export function registerCareerIpc(store: CareerStore): CareerService {
 
   // Inputs arrive as untrusted data. The service re-validates them; here we only ensure a plain object.
   ipcMain.removeHandler(CAREER_CHANNELS.create);
-  ipcMain.handle(CAREER_CHANNELS.create, (_event, payload: unknown) => {
+  handleTrustedIpc(CAREER_CHANNELS.create, (_event, payload: unknown) => {
     const input = requirePlainObject(payload);
     return service.createCareer({
       name: input['name'] as string,
@@ -44,16 +45,16 @@ export function registerCareerIpc(store: CareerStore): CareerService {
   });
 
   ipcMain.removeHandler(CAREER_CHANNELS.list);
-  ipcMain.handle(CAREER_CHANNELS.list, () => service.listCareers());
+  handleTrustedIpc(CAREER_CHANNELS.list, () => service.listCareers());
 
   ipcMain.removeHandler(CAREER_CHANNELS.open);
-  ipcMain.handle(CAREER_CHANNELS.open, (_event, payload: unknown) => {
+  handleTrustedIpc(CAREER_CHANNELS.open, (_event, payload: unknown) => {
     const input = requirePlainObject(payload);
     return service.openCareer(input['id'] as string);
   });
 
   ipcMain.removeHandler(CAREER_CHANNELS.listFixtures);
-  ipcMain.handle(CAREER_CHANNELS.listFixtures, async (_event, payload: unknown) => {
+  handleTrustedIpc(CAREER_CHANNELS.listFixtures, async (_event, payload: unknown) => {
     const input = requirePlainObject(payload);
     const careerId = input['careerId'];
     if (typeof careerId !== 'string' || careerId.trim() === '') {
@@ -68,7 +69,7 @@ export function registerCareerIpc(store: CareerStore): CareerService {
   });
 
   ipcMain.removeHandler(CAREER_CHANNELS.updatePlayer);
-  ipcMain.handle(CAREER_CHANNELS.updatePlayer, async (_event, payload: unknown) => {
+  handleTrustedIpc(CAREER_CHANNELS.updatePlayer, async (_event, payload: unknown) => {
     const input = requirePlainObject(payload);
     const careerId = requireString(input['careerId'], 'careerId');
     const playerId = requireString(input['playerId'], 'playerId');
@@ -92,7 +93,7 @@ export function registerCareerIpc(store: CareerStore): CareerService {
   });
 
   ipcMain.removeHandler(CAREER_CHANNELS.listPlayers);
-  ipcMain.handle(CAREER_CHANNELS.listPlayers, async (_event, payload: unknown) => {
+  handleTrustedIpc(CAREER_CHANNELS.listPlayers, async (_event, payload: unknown) => {
     const input = requirePlainObject(payload);
     const careerId = input['careerId'];
     if (typeof careerId !== 'string' || careerId.trim() === '') {

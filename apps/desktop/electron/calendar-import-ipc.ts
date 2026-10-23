@@ -10,6 +10,7 @@ import {
 import { createCareerImportRepositories, type CareerStore } from '@gerenciador/database';
 import { Buffer as NodeBuffer } from 'node:buffer';
 import { TextDecoder } from 'node:util';
+import { handleTrustedIpc } from './ipc-security';
 
 export const CALENDAR_IMPORT_CHANNELS = Object.freeze({
   selectFile: 'calendar:select-import-file',
@@ -28,7 +29,7 @@ export function registerCalendarImportIpc(store: CareerStore): void {
   const repositories = createCareerImportRepositories(store.prisma);
 
   ipcMain.removeHandler(CALENDAR_IMPORT_CHANNELS.selectFile);
-  ipcMain.handle(CALENDAR_IMPORT_CHANNELS.selectFile, async () => {
+  handleTrustedIpc(CALENDAR_IMPORT_CHANNELS.selectFile, async () => {
     const choice = await dialog.showOpenDialog({
       title: 'Selecionar calendário do Gerenciador',
       defaultPath: app.getPath('documents'),
@@ -65,7 +66,7 @@ export function registerCalendarImportIpc(store: CareerStore): void {
   });
 
   ipcMain.removeHandler(CALENDAR_IMPORT_CHANNELS.preview);
-  ipcMain.handle(CALENDAR_IMPORT_CHANNELS.preview, async (_event, payload: unknown) => {
+  handleTrustedIpc(CALENDAR_IMPORT_CHANNELS.preview, async (_event, payload: unknown) => {
     const input = plainObject(payload);
     const selectionToken = input['selectionToken'];
     if (typeof selectionToken !== 'string') throw new TypeError('A selected file token is required.');
@@ -91,7 +92,7 @@ export function registerCalendarImportIpc(store: CareerStore): void {
   });
 
   ipcMain.removeHandler(CALENDAR_IMPORT_CHANNELS.confirm);
-  ipcMain.handle(CALENDAR_IMPORT_CHANNELS.confirm, async (_event, payload: unknown) => {
+  handleTrustedIpc(CALENDAR_IMPORT_CHANNELS.confirm, async (_event, payload: unknown) => {
     const input = plainObject(payload);
     const token = input['token'];
     const careerId = input['careerId'];
@@ -131,7 +132,7 @@ export function registerCalendarImportIpc(store: CareerStore): void {
   });
 
   ipcMain.removeHandler(CALENDAR_IMPORT_CHANNELS.cancel);
-  ipcMain.handle(CALENDAR_IMPORT_CHANNELS.cancel, (_event, payload: unknown) => {
+  handleTrustedIpc(CALENDAR_IMPORT_CHANNELS.cancel, (_event, payload: unknown) => {
     const input = plainObject(payload);
     if (typeof input['token'] === 'string' && input['kind'] === 'selection') selectedFiles.delete(input['token']);
     if (typeof input['token'] === 'string' && input['kind'] === 'preview') pendingPreviews.delete(input['token']);

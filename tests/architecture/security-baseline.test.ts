@@ -15,10 +15,25 @@ describe('Phase 1 Electron security baseline', () => {
     expect(mainSource).toContain('nodeIntegration: false');
   });
 
-  it('blocks new windows and untrusted top-level navigation', () => {
+  it('blocks new windows and restricts top-level navigation to the trusted renderer URL', () => {
     expect(mainSource).toContain('setWindowOpenHandler');
     expect(mainSource).toContain('will-navigate');
     expect(mainSource).toContain("action: 'deny'");
+    expect(mainSource).toContain('function isTrustedRendererUrl');
+    expect(mainSource).toContain('target.href === expectedUrl.href');
+    expect(mainSource).toContain('target.origin === expected.origin');
+    expect(mainSource).not.toContain("targetUrl.startsWith('file://')");
+  });
+
+  it('validates invoke IPC senders against the trusted top-level renderer', () => {
+    const ipcSecuritySource = readFileSync(resolve(projectRoot, 'apps/desktop/electron/ipc-security.ts'), 'utf8');
+    expect(mainSource).toContain('trustMainRenderer(mainWindow.webContents.id, mainWindow.webContents.getURL())');
+    expect(ipcSecuritySource).toContain('event.sender.id !== trustedWebContentsId');
+    expect(ipcSecuritySource).toContain('frame.parent !== null');
+    expect(ipcSecuritySource).toContain('frame.url !== trustedMainFrameUrl');
+    expect(careerIpcSource).toContain('handleTrustedIpc(');
+    expect(calendarImportIpcSource).toContain('handleTrustedIpc(');
+    expect(readFileSync(resolve(projectRoot, 'apps/desktop/electron/backup-ipc.ts'), 'utf8')).toContain('handleTrustedIpc(');
   });
 
   it('exposes no privileged bridge methods in the preload', () => {
