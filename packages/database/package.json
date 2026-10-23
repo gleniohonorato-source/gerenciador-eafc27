@@ -1,0 +1,30 @@
+{
+  "name": "@gerenciador/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:validate": "prisma validate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "build": "prisma generate --schema prisma/schema.prisma && tsc --build",
+    "typecheck": "prisma generate --schema prisma/schema.prisma && tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "dependencies": {
+    "@gerenciador/application": "workspace:*",
+    "@gerenciador/domain": "workspace:*",
+    "@prisma/client": "6.19.3"
+  },
+  "devDependencies": {
+    "prisma": "6.19.3"
+  }
+}

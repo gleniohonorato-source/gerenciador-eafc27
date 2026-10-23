@@ -1,0 +1,69 @@
+{
+  "name": "@gerenciador/desktop",
+  "version": "0.1.1",
+  "description": "Gerenciador local de carreira para EA SPORTS FC 27.",
+  "author": "Gaffer Tools",
+  "private": true,
+  "type": "module",
+  "main": "out/main/main.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "prepackage:win": "node ../../scripts/copy-prisma-runtime.mjs && electron-vite build",
+    "package:win": "pnpm exec electron-builder --win nsis --x64",
+    "typecheck": "tsc --build",
+    "clean": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\""
+  },
+  "build": {
+    "appId": "com.gerenciador.eafc27",
+    "productName": "Gerenciador EA FC 27",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "extraResources": [
+      {
+        "from": ".package-resources/prisma-client",
+        "to": "prisma-client"
+      },
+      {
+        "from": ".package-resources/prisma-runtime",
+        "to": "prisma-runtime"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "devDependencies": {
+    "@gerenciador/application": "workspace:*",
+    "@gerenciador/database": "workspace:*",
+    "electron": "44.8.0",
+    "electron-builder": "26.15.3",
+    "electron-builder-squirrel-windows": "26.15.3"
+  }
+}

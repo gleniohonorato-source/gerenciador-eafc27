@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
+    "outDir": "out/types"
+  },
+  "include": ["electron/**/*.ts", "renderer/src/**/*.ts", "renderer/src/**/*.tsx", "vite.config.ts"],
+  "references": [
+    { "path": "../../packages/application" },
+    { "path": "../../packages/database" }
+  ]
+}

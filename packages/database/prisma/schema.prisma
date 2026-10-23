@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Career {
+  id                 String        @id
+  name               String
+  currentSeason      String
+  controlledClubId   String?
+  randomSeed         String
+  createdAt          DateTime
+  controlledClub     Club?         @relation("ControlledClub", fields: [controlledClubId], references: [id], onDelete: SetNull)
+  clubs              Club[]        @relation("CareerClubs")
+  players            Player[]
+  fixtures           Fixture[]
+  financeEntries     FinanceEntry[]
+
+  @@index([name])
+}
+
+model Club {
+  id             String        @id
+  careerId       String
+  name           String
+  countryCode    String
+  competitionId  String
+  reputation     Int
+  createdAt      DateTime
+  career         Career        @relation("CareerClubs", fields: [careerId], references: [id], onDelete: Cascade)
+  controlledBy   Career[]      @relation("ControlledClub")
+  players        Player[]
+  homeFixtures   Fixture[]     @relation("FixtureHomeClub")
+  awayFixtures   Fixture[]     @relation("FixtureAwayClub")
+  financeEntries FinanceEntry[]
+
+  @@unique([careerId, name])
+  @@index([careerId])
+}
+
+model Player {
+  id                     String          @id
+  careerId               String
+  currentClubId           String?
+  name                   String
+  birthDate              DateTime?
+  overall                Int?
+  potential              Int?
+  heightCm               Int?
+  weightKg               Int?
+  provenanceKind         String
+  provenanceSource       String
+  provenanceRecordedAt   DateTime
+  originalProvenanceKind        String?
+  originalProvenanceSource      String?
+  originalProvenanceRecordedAt DateTime?
+  career                 Career          @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  currentClub            Club?           @relation(fields: [currentClubId], references: [id], onDelete: SetNull)
+
+  @@index([careerId, currentClubId])
+}
+
+model Fixture {
+  id                     String          @id
+  careerId               String
+  competitionId          String
+  season                 String
+  homeClubId             String
+  awayClubId             String
+  kickoffAt              DateTime
+  timeZone               String
+  status                 String
+  homeScore              Int?
+  awayScore              Int?
+  provenanceKind         String?
+  provenanceSource       String?
+  provenanceRecordedAt   DateTime?
+  career                 Career          @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  homeClub               Club            @relation("FixtureHomeClub", fields: [homeClubId], references: [id], onDelete: Restrict)
+  awayClub               Club            @relation("FixtureAwayClub", fields: [awayClubId], references: [id], onDelete: Restrict)
+
+  @@index([careerId, kickoffAt])
+}
+
+model FinanceEntry {
+  id                     String           @id
+  careerId               String
+  clubId                 String
+  direction              String
+  category               String
+  minorUnits             BigInt
+  currency               String
+  occurredAt             DateTime
+  reference              String?
+  provenanceKind         String
+  provenanceSource       String
+  provenanceRecordedAt   DateTime
+  career                 Career           @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  club                   Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([careerId, occurredAt])
+  @@index([clubId, occurredAt])
+}

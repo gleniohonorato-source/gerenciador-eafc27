@@ -1,0 +1,22 @@
+node_modules/
+**/node_modules/
+**/dist/
+**/out/
+apps/desktop/release/
+apps/desktop/.package-resources/
+exemplo-calendario-teste.json
+exemplo-elenco-teste.json
+**/coverage/
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Local build/package backups; never commit installers or dependency manifest backups.
+*-anterior.exe
+*.pre-dep-update.bak
+.git-corrupt-backup/

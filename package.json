@@ -1,0 +1,42 @@
+{
+  "name": "gerenciador-ea-fc-27",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.5",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @gerenciador/desktop dev",
+    "build": "pnpm -r build",
+    "package:win": "pnpm --filter @gerenciador/desktop package:win",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "pnpm --filter @gerenciador/database db:generate && vitest run",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @gerenciador/database db:generate",
+    "db:validate": "pnpm --filter @gerenciador/database db:validate",
+    "db:migrate": "pnpm --filter @gerenciador/database db:migrate",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@types/node": "^22.13.4",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.8.0",
+    "electron-vite": "^6.0.0",
+    "eslint": "^9.19.0",
+    "prettier": "^3.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "~5.7.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
